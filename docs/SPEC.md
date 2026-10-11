@@ -67,12 +67,12 @@ in-place resize. It exists to make VPA obsolete by delivering:
 <a id="technology-decisions"></a>
 ## 2. Technology Decisions
 
-### 2.1 Language: Go 1.27.1
+### 2.1 Language: Go 1.27.2
 
 | Factor | Decision |
 |--------|----------|
-| Language | Go 1.27.1 |
-| Module directive | `go 1.27.1` |
+| Language | Go 1.27.2 |
+| Module directive | `go 1.27.2` |
 | Rationale | 85%+ of production K8s operators use Go. Largest ecosystem, hiring pool, and controller-runtime support. Green Tea GC (1.26) provides lower latency. |
 | What competitors use | right-sizer: Go 1.25, OptiPod: Go 1.24.6, VPA: Go |
 | What model operators use | CloudNativePG: Go 1.26.3, Kyverno: Go 1.26.2 |
@@ -110,7 +110,7 @@ The official Prometheus Go client for querying (not exposing metrics). Returns t
 ### 2.4 Complete Dependency Table
 
 ```
-go 1.27.1
+go 1.27.2
 
 # Core
 sigs.k8s.io/controller-runtime          v0.25.2
@@ -128,7 +128,7 @@ github.com/stretchr/testify             latest
 
 # Tools (CI/build, not Go module deps)
 kubebuilder                             v4.14.0
-golangci-lint                           v2.13.x
+golangci-lint                           v2.14.x
 goreleaser                              v2.15.x
 ko                                      latest
 cosign                                  latest
@@ -935,7 +935,7 @@ Auto-tune stays off unless the HPA annotation `attune.io/auto-tune` is `"true"`.
 
 Pod Resource baselines are `attune.io/original-target-memory` and `attune.io/original-memory-request`. ContainerResource baselines share `attune.io/original-container-memory`, a JSON object keyed by container name. A second resize multiplies the stored original target by the stored request divided by the new request. Corrupt JSON is not rewritten. The percent for that cycle still uses this cycle's old and new request.
 
-A stored `attune.io/original-memory-request` or `attune.io/original-cpu-request` is replaced with this cycle's pre-resize pod sum when it is strictly below that sum and equals the history-old sum or the same sum with native sidecars removed. One-shot init containers stay out. A stored value that matches neither stays, including a full base after later growth and a smaller base that already includes the sidecar. `HPABaseRepaired` is a Warning emitted after that HPA update succeeds, one event per rewritten annotation, and the message names the annotation. A failed update does not emit it. ContainerResource baselines are not repaired this way.
+The first Resource retune also stores the containers in that sum as `attune.io/original-cpu-request-containers` or `attune.io/original-memory-request-containers`. The value is a sorted comma-separated list of DNS-1123 names. It includes `spec.containers` and init containers with `restartPolicy: Always`, including a container whose pre-resize request is zero. A one-shot init stays out. A later resize of a container already named on the list does not add that request to the stored quantity. A container that joins with a zero pre-resize request is added to the list without changing the quantity and without `HPABaseRepaired`. When the list is well formed, a later resize adds only a container that is in this cycle's pre-resize sum and missing from the list, at that container's pre-resize request. A listed container is not added again because the stored quantity equals the history-old sum. A listed name that is gone from the pod stays in the quantity. An empty value or a token that is not a DNS-1123 label is no list. A stored base with no list is replaced with this cycle's pre-resize pod sum when it is strictly below that sum and equals the history-old sum or the same sum with native sidecars removed. That repair writes the list of the containers in the new sum. A stored value that matches neither sum stays, including a full base after later growth and a smaller base that already includes the sidecar. A full base with no list can still be rewritten when it equals the history-old sum. `HPABaseRepaired` is a Warning emitted after that HPA update succeeds, one event per rewritten annotation, and the message names the annotation. It is not emitted when the quantity stays. A failed update does not emit it. The repair is stored even when the published percent does not change. ContainerResource baselines are not repaired this way.
 
 `updateStrategy.hpaTargetBounds` is optional. Nil or an empty object applies no user band and does not fill 50 or 90. CPU and memory bands are separate. When a side is set, Attune truncates, floors at 1, applies the limit cap, then `max`, then `min`, and publishes the limit cap again if `min` would exceed it. `HPATargetClamped` is a Normal event emitted after the HPA update succeeds, and only when the user band changes the post-limit percent. `min` and `max` are integers from 1 to 10000. `max` must be greater than or equal to `min` when both are set. AttuneDefaults may supply the block. There is no Helm value that turns the annotation or the band on.
 
@@ -1174,7 +1174,7 @@ Jobs:
     - Downstream jobs skip irrelevant work on docs-only or YAML-only diffs
 
   lint:
-    - golangci-lint v2.13.x (with .golangci.yml config)
+    - golangci-lint v2.14.x (with .golangci.yml config)
     - `go mod tidy` cleanliness check
     - License boilerplate verification
     - Documentation defaults / dashboard metrics / tool-version consistency checks
