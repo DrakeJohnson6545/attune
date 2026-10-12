@@ -36,12 +36,18 @@ feature: [Report a vulnerability](https://github.com/attune-io/attune/security/a
 
 ### Vulnerability Scanning
 
-- [Trivy](https://trivy.dev) filesystem and container image scans run
-  weekly
+- [Trivy](https://trivy.dev) filesystem and image scans run on every
+  pull request, on the merge queue, on manual dispatch, and every
+  Monday at 06:00 UTC. The release workflow scans the published image
+  again.
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)
-  runs weekly for known Go vulnerabilities
-- [Gitleaks](https://gitleaks.io) secret detection runs on every push
-- [CodeQL](https://codeql.github.com) static analysis runs weekly
+  runs on every pull request as a CI job, and again in the security
+  workflow on those same security triggers.
+- [Gitleaks](https://gitleaks.io) secret detection runs in the security
+  workflow on those triggers. A push to main does not run it.
+- [CodeQL](https://codeql.github.com) for Go and GitHub Actions runs in
+  the security workflow on those triggers. Release-please pull requests
+  skip the analysis and report a stand-in.
 - [GitHub secret scanning](https://docs.github.com/en/code-security/secret-scanning)
   is enabled at the organization level
 
@@ -53,7 +59,8 @@ feature: [Report a vulnerability](https://github.com/attune-io/attune/security/a
   repository's security posture
 - [Dependabot](https://docs.github.com/en/code-security/dependabot)
   monitors Go modules, GitHub Actions, and Docker base images weekly
-- Static analysis via golangci-lint (50+ linters) runs on every push
+- Static analysis via golangci-lint (50+ linters) runs in CI on pull
+  requests. Product CI does not run on a push to main.
 
 ### Tenancy
 

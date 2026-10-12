@@ -1276,10 +1276,14 @@ Jobs:
 Writes the default-branch Actions cache that PR `test-bench` jobs restore.
 PR jobs cannot update that cache scope.
 
-#### `security.yaml` - Security Scanning (on PR, weekly schedule, dispatch)
+#### `security.yaml` - Security Scanning (on pull request, merge queue, weekly schedule, and manual dispatch)
 
 ```
 Jobs:
+  codeql:
+    - CodeQL for Go and GitHub Actions, queries security-and-quality
+    - A release-please pull request skips analysis and reports a stand-in
+
   govulncheck:
     - govulncheck ./...
 
@@ -1292,10 +1296,6 @@ Jobs:
 
   gitleaks:
     - Full-repo secret scan with `fetch-depth: 0`
-
-Notes:
-  - CodeQL and dependency-review are intentionally disabled for this private repo
-    because they require GitHub Advanced Security
 ```
 
 #### `docs.yaml` - Documentation build validation (on docs pushes + manual)
